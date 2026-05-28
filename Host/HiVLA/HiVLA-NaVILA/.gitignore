@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+eval_out/
+*.bak
+*.log
+.DS_Store

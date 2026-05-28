@@ -1,0 +1,50 @@
+BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
+TRAINER_NAME: hivla_trainer
+SIMULATOR_GPU_ID: 0
+TORCH_GPU_ID: 0
+VIDEO_OPTION: ['disk']
+TENSORBOARD_DIR: ""
+NUM_ENVIRONMENTS: 1
+EVAL_CKPT_PATH_DIR: checkpoints/navila-llama3-8b-8f
+RESULTS_DIR: eval_out/hivla
+CONV_TYPE: llama_3
+
+# ──────────────────────────────────────────────────────────────
+# HiVLA Pipeline Configuration
+#
+# Pipeline steps (run via eval_navila_hivla.sh):
+#   1  H_tmp Extraction  → temporal_head_importance.json   [eval]
+#   2  Data Extraction   → anomaly_metrics_chunk*.jsonl    [eval]
+#   3  GT Labeling       → episode_diagnostics.jsonl       [offline]
+#   4  H_nav Selection   → head_importance.csv             [offline]
+#   5  Grid Search       → best_config.json                [offline]
+#   6  Figures           → ablation plots                  [offline]
+#   7  Comparison        → baseline comparison             [offline]
+# ──────────────────────────────────────────────────────────────
+HIVLA:
+
+  # Step 1: H_tmp Extraction
+  # Identifies temporal heads via Diagonal-Shifting score on successful episodes.
+  HTMP_EXTRACTION:
+    ENABLED: false
+    EXTRACT_H_TMP: false
+    SPL_THRESHOLD: 1.0
+    MAX_SUCCESS_EPISODES: 50
+
+  # Step 2: Data Extraction
+  # Records per-step attention metrics (e_system, s_peak) and action_prob.
+  # Requires Step 1 output to select which H_tmp heads to monitor.
+  DATA_EXTRACTION:
+    ENABLED: false
+    HEAD_TYPE: h_tmp
+    RATIO: 0.1
+    OUTPUT_FORMAT: jsonl
+    OUTPUT_DIR: ""
+    TEMPORAL_HEAD_IMPORTANCE_PATH: "eval_out/hivla/1_htmp/temporal_head_importance.json"
+
+EVAL:
+  USE_CKPT_CONFIG: false
+  SPLIT: val_seen
+  EPISODE_COUNT: -1
+  SAVE_RESULTS: true
+  LANGUAGES: ["en-US"]
