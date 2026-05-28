@@ -193,7 +193,7 @@ All experiments in the paper were conducted on the following hardware and softwa
     </tr>
     <tr>
       <td>Natural Threshold</td>
-      <td><strong>τ = 0.95</strong></td>
+      <td>τ = 0.95</td>
     </tr>
     <tr>
       <td rowspan="4"><strong>RL Action Policy</strong></td>
