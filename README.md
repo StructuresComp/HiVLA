@@ -40,10 +40,10 @@ We propose an end-to-end robotic navigation framework that pairs a **high-level 
 HiVLA is a hierarchical navigation framework with two tightly integrated stages:
 
 **Stage 1 — High-Level VLA Planner**
-A frozen NaVILA model takes RGB observations and a language instruction to predict mid-level actions (e.g., *"Move forward 75 cm"*). Internally, a small subset of attention heads — termed **Navigation Heads (H_nav)** — naturally track spatiotemporal alignment between the visual history and the instruction. We monitor their entropy in real time to detect path deviations with **near-zero additional computational overhead**. Upon anomaly detection, the system saves the last safe checkpoint **C_safe** and triggers a rollback.
+A frozen NaVILA model takes RGB observations and a language instruction to predict mid-level actions (e.g., *"Move forward 75 cm"*). Internally, a small subset of attention heads — termed Navigation Heads (H_nav) — naturally track spatiotemporal alignment between the visual history and the instruction. We monitor their entropy in real time to detect path deviations with near-zero additional computational overhead. Upon anomaly detection, the system saves the last safe checkpoint C_safe and triggers a rollback.
 
 **Stage 2 — Low-Level RL Policy**
-A lightweight **CNN+MLP** actor-critic (**4.89 M params**) trained in IsaacLab with PPO provides reactive, collision-free velocity commands using a **128×128 LiDAR costmap**. It runs **continuously** alongside the VLA — handling local obstacle avoidance during normal navigation and executing the **shortest-path recovery** to C_safe when a deviation is detected.
+A lightweight CNN+MLP actor-critic (4.89 M params) trained in IsaacLab with PPO provides reactive, collision-free velocity commands using a 128×128 LiDAR costmap. It runs continuously alongside the VLA — handling local obstacle avoidance during normal navigation and executing the shortest-path recovery to C_safe when a deviation is detected.
 
 ---
 
@@ -104,9 +104,9 @@ All experiments in the paper were conducted on the following hardware and softwa
 <table width="100%">
   <thead>
     <tr>
-      <th>Category</th>
-      <th>Component</th>
-      <th>Specification</th>
+      <th width="20%">Category</th>
+      <th width="30%">Component</th>
+      <th width="50%">Specification</th>
     </tr>
   </thead>
   <tbody>
