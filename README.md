@@ -27,7 +27,7 @@
 
 ## TL;DR
 
-We propose an end-to-end robotic navigation framework that pairs a high-level VLA model with a continuous low-level RL policy. During normal operation, the RL policy constantly ensures reactive, collision-free obstacle avoidance, while highly accurate LiDAR-RGB-IMU sensor fusion (Fast-LIVO2) continuously logs safe waypoints. Simultaneously, by monitoring specialized internal attention heads, the system detects VLA hallucinations and path deviations in real-time with zero computational overhead. When a deviation occurs, the system seamlessly leverages the active RL policy to execute a direct safe recovery, autonomously navigating back to the last correct path for highly reliable real-world deployment. The entire pipeline is built on ROS 2, enabling modular integration and real-time operation on physical hardware.
+We propose an end-to-end robotic navigation framework that pairs a **high-level VLA model** with a **continuous low-level RL policy**. During normal operation, the RL policy constantly ensures **reactive, collision-free obstacle avoidance**, while highly accurate LiDAR-RGB-IMU sensor fusion (Fast-LIVO2) continuously logs safe waypoints. Simultaneously, by monitoring specialized internal attention heads, the system detects VLA hallucinations and path deviations in real-time with **zero computational overhead**. When a deviation occurs, the system seamlessly leverages the active RL policy to execute a **direct safe recovery**, autonomously navigating back to the last correct path for highly reliable real-world deployment. The entire pipeline is built on **ROS 2**, enabling modular integration and real-time operation on physical hardware.
 
 ---
 
@@ -40,10 +40,10 @@ We propose an end-to-end robotic navigation framework that pairs a high-level VL
 HiVLA is a hierarchical navigation framework with two tightly integrated stages:
 
 **Stage 1 — High-Level VLA Planner**
-A frozen NaVILA model takes RGB observations and a language instruction to predict mid-level actions (e.g., *"Move forward 75 cm"*). Internally, a small subset of attention heads — termed **Navigation Heads (H_nav)** — naturally track spatiotemporal alignment between the visual history and the instruction. We monitor their entropy in real time to detect path deviations with near-zero additional computational overhead. Upon anomaly detection, the system saves the last safe checkpoint C_safe and triggers a rollback.
+A frozen NaVILA model takes RGB observations and a language instruction to predict mid-level actions (e.g., *"Move forward 75 cm"*). Internally, a small subset of attention heads — termed **Navigation Heads (H_nav)** — naturally track spatiotemporal alignment between the visual history and the instruction. We monitor their entropy in real time to detect path deviations with **near-zero additional computational overhead**. Upon anomaly detection, the system saves the last safe checkpoint **C_safe** and triggers a rollback.
 
 **Stage 2 — Low-Level RL Policy**
-A lightweight CNN+MLP actor-critic (4.89 M params) trained in IsaacLab with PPO provides reactive, collision-free velocity commands using a 128×128 LiDAR costmap. It runs **continuously** alongside the VLA — handling local obstacle avoidance during normal navigation and executing the shortest-path recovery to C_safe when a deviation is detected.
+A lightweight **CNN+MLP** actor-critic (**4.89 M params**) trained in IsaacLab with PPO provides reactive, collision-free velocity commands using a **128×128 LiDAR costmap**. It runs **continuously** alongside the VLA — handling local obstacle avoidance during normal navigation and executing the **shortest-path recovery** to C_safe when a deviation is detected.
 
 ---
 
@@ -96,37 +96,124 @@ See [`hivla_project/README.md`](Host/IsaacLab/source/extensions/hivla_project/RE
 ### C. Jetson Deployment (Real-World)
 
 <p align="center">
-  <img src="assets/Hardware_Software.png" alt="Jetson Setup" width="80%">
+  <img src="assets/Hardware_Software.png" alt="Hardware and Software Stack" width="100%">
 </p>
 
 All experiments in the paper were conducted on the following hardware and software stack:
 
-| Category | Component | Specification |
-|----------|-----------|---------------|
-| **Hardware** | Compute | NVIDIA Jetson AGX Orin Dev. 64 GB |
-| | Mobile Base | AgileX Scout 2.0 |
-| | Camera | ZED 2i (Stereo RGB-D) |
-| | LiDAR | RoboSense Helios RS-32 |
-| **System Software** | JetPack | 6.2.1 (L4T R36.4.7) |
-| | Kernel | 5.15.148-tegra |
-| | OS | Ubuntu 22.04 (aarch64) |
-| | CUDA | 12.6 |
-| | cuDNN | 9.3.0 |
-| | Python | 3.10.12 |
-| **ROS 2 Stack** | ROS 2 Distro | Humble |
-| **NaVILA Model** | Base Model | VILA (LLaMA-3 8B) |
-| | Vision Encoder | SigLIP-So400M/patch14/384 |
-| | Checkpoint | navila-llama3-8b-8f |
-| | Input Resolution | 384 × 384 |
-| | Inference Frames | 8 (7 history + 1 current) |
-| **Deviation Detection** | Selected Heads ([L, H]) | [21, 12], [16, 1], [14, 1] |
-| | Window Size | W = 10 steps |
-| | Patience Threshold | P = 9 steps |
-| | Natural Threshold | τ = 0.95 |
-| **RL Action Policy** | Architecture | CNN + MLP |
-| | Parameters | 4.89 M |
-| | Costmap Input | 1 × 128 × 128 (Occupancy Grid) |
-| | Goal Input | 1 × 2 (Δx, Δy in local frame) |
+<table width="100%">
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Component</th>
+      <th>Specification</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan="4"><strong>Hardware</strong></td>
+      <td>Compute</td>
+      <td><strong>NVIDIA Jetson AGX Orin Dev. 64 GB</strong></td>
+    </tr>
+    <tr>
+      <td>Mobile Base</td>
+      <td>AgileX Scout 2.0</td>
+    </tr>
+    <tr>
+      <td>Camera</td>
+      <td>ZED 2i (Stereo RGB-D)</td>
+    </tr>
+    <tr>
+      <td>LiDAR</td>
+      <td>RoboSense Helios RS-32</td>
+    </tr>
+    <tr>
+      <td rowspan="6"><strong>System Software</strong></td>
+      <td>JetPack</td>
+      <td>6.2.1 (L4T R36.4.7)</td>
+    </tr>
+    <tr>
+      <td>Kernel</td>
+      <td>5.15.148-tegra</td>
+    </tr>
+    <tr>
+      <td>OS</td>
+      <td>Ubuntu 22.04 (aarch64)</td>
+    </tr>
+    <tr>
+      <td>CUDA</td>
+      <td><strong>12.6</strong></td>
+    </tr>
+    <tr>
+      <td>cuDNN</td>
+      <td>9.3.0</td>
+    </tr>
+    <tr>
+      <td>Python</td>
+      <td>3.10.12</td>
+    </tr>
+    <tr>
+      <td><strong>ROS 2 Stack</strong></td>
+      <td>ROS 2 Distro</td>
+      <td><strong>Humble</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="5"><strong>NaVILA Model</strong></td>
+      <td>Base Model</td>
+      <td><strong>VILA (LLaMA-3 8B)</strong></td>
+    </tr>
+    <tr>
+      <td>Vision Encoder</td>
+      <td>SigLIP-So400M/patch14/384</td>
+    </tr>
+    <tr>
+      <td>Checkpoint</td>
+      <td>navila-llama3-8b-8f</td>
+    </tr>
+    <tr>
+      <td>Input Resolution</td>
+      <td>384 × 384</td>
+    </tr>
+    <tr>
+      <td>Inference Frames</td>
+      <td>8 (7 history + 1 current)</td>
+    </tr>
+    <tr>
+      <td rowspan="4"><strong>Deviation Detection</strong></td>
+      <td>Selected Heads ([L, H])</td>
+      <td><strong>[21, 12], [16, 1], [14, 1]</strong></td>
+    </tr>
+    <tr>
+      <td>Window Size</td>
+      <td>W = 10 steps</td>
+    </tr>
+    <tr>
+      <td>Patience Threshold</td>
+      <td>P = 9 steps</td>
+    </tr>
+    <tr>
+      <td>Natural Threshold</td>
+      <td><strong>τ = 0.95</strong></td>
+    </tr>
+    <tr>
+      <td rowspan="4"><strong>RL Action Policy</strong></td>
+      <td>Architecture</td>
+      <td><strong>CNN + MLP</strong></td>
+    </tr>
+    <tr>
+      <td>Parameters</td>
+      <td>4.89 M</td>
+    </tr>
+    <tr>
+      <td>Costmap Input</td>
+      <td>1 × 128 × 128 (Occupancy Grid)</td>
+    </tr>
+    <tr>
+      <td>Goal Input</td>
+      <td>1 × 2 (Δx, Δy in local frame)</td>
+    </tr>
+  </tbody>
+</table>
 
 See [`Jetson/HiVLA/README.md`](Jetson/HiVLA/README.md) for the full build and launch guide.
 
