@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>HiVLA Control Center</title>
+
+  <script src="/static/socket.io.min.js"></script>
+
+  <style>
+    /* =================================================================================
+       1. Global Variables & Reset
+       ================================================================================= */
+    :root {
+      --bg-color: #121212;
+      --panel-bg: #1e1e1e;
+      --text-color: #e0e0e0;
+      --accent-color: #007bff;
+      --border-color: #333;
+      --success-color: #00ff00;
+      --danger-color: #d32f2f;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      /* Left Panel (3) : Right Panel (2) */
+    }
+
+    /* =================================================================================
+       2. Left Panel Layout (Camera Views & Controls)
+       ================================================================================= */
+    .panel-container {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-right: 1px solid var(--border-color);
+    }
+
+    #left-panel {
+      background: black;
+    }
+
+    /* [TOP] View Area (75% flexible height) */
+    #left-view-container {
+      flex: 3;
+      position: relative;
+      background: #000;
+      border-bottom: 1px solid var(--border-color);
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* [BOTTOM] Controls Area (25% flexible height) */
+    #left-controls-container {
+      flex: 1;
+      background: var(--panel-bg);
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Stream Content Wrappers */
+    .view-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #remotevideo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    #nav-zed-img {
+      height: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+    }
+
+    /* =================================================================================
+       3. Right Panel Layout (Map & Trajectory)
+       ================================================================================= */
+    #right-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--panel-bg);
+      min-width: 0;
+      min-height: 0;
+    }
+
+    /* [TOP] Costmap Area */
+    #costmap-container {
+      flex: 1;
+      background: #000;
+      position: relative;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    #nav-costmap-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* [BOTTOM] Trajectory Canvas Area */
+    #traj-container {
+      flex: 1;
+      position: relative;
+      background: #111;
+      min-height: 0;
+    }
+
+    #trajectoryCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* =================================================================================
+       4. UI Components & Overlays
+       ================================================================================= */
+    .hidden {
+      display: none !important;
+    }
+
+    .label-overlay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 10;
+      color: white;
+    }
+
+    /* Control Inputs */
+    .control-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: #444;
+      color: white;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      transition: 0.2s;
+    }
+
+    .mode-btn.active {
+      background: var(--accent-color);
+      font-weight: bold;
+      transform: scale(1.02);
+    }
+
+    .action-btn {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+
+    .btn-start {
+      background: var(--danger-color);
+      color: white;
+    }
+
+    .btn-stop {
+      background: #666;
+      color: white;
+    }
+
+    .btn-run {
+      background: var(--accent-color);
+      color: white;
+      white-space: nowrap;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 8px;
+      background: #111;
+      border: 1px solid #444;
+      color: white;
+      border-radius: 4px;
+    }
+
+    /* Stats Grid */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px 15px;
+      font-size: 0.85rem;
+      background: #252525;
+      padding: 8px;
+      border-radius: 5px;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      color: #ccc;
+    }
+
+    .stat-val {
+      font-family: monospace;
+      color: #4fc3f7;
+      font-weight: bold;
+    }
+
+    /* Canvas Tooltip */
+    #coord-tooltip {
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--success-color);
+      font-family: monospace;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      pointer-events: none;
+    }
+
+    /* Debug Log Overlay */
+    #overlay-debug {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #e0e0e0;
+      background-color: rgba(30, 30, 30, 0.85);
+      border: 1px solid #444;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      font-size: 14px;
+      line-height: 1.4;
+      padding: 10px;
+      border-radius: 5px;
+      pointer-events: none;
+    }
+    #overlay-navila {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      color: #a8e6cf;
+      background-color: rgba(10, 20, 30, 0.88);
+      border: 1px solid #2a6049;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      font-size: 15px;
+      line-height: 1.5;
+      padding: 8px 18px;
+      border-radius: 8px;
+      pointer-events: none;
+      white-space: pre-wrap;
+      z-index: 100;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="left-panel" class="panel-container">
+
+    <div id="left-view-container">
+      <!-- ZED Camera View -->
+      <div id="view-zed" class="view-content">
+        <img id="nav-zed-img" src="" alt="Waiting for Stream..." />
+      </div>
+
+      <div id="label-rgb" class="label-overlay">📷 RGB</div>
+
+      <div id="overlay-debug" class="hidden">
+        Waiting for HiVLA logs...
+      </div>
+
+      <div id="overlay-navila" class="hidden"></div>
+
+    </div>
+
+    <div id="left-controls-container">
+
+
+
+      <div id="instruction-ui-group">
+        <div class="control-row">
+          <input id="instructionInput" type="text" placeholder="Language Instruction or Path [(x,y),...]" />
+          <button id="runStopButton" class="action-btn btn-run" onclick="toggleInstruction()">Run HiVLA</button>
+        </div>
+      </div>
+
+      <div id="rec-ui-group">
+        <div class="control-row">
+          <input id="dirnameInput" type="text" placeholder="Bag Name (e.g. data01)" />
+          <button class="action-btn btn-start" onclick="startRecording()">REC</button>
+          <button class="action-btn btn-stop" onclick="stopRecording()">STOP</button>
+        </div>
+      </div>
+
+      <div class="stats-container">
+        <div class="stat-item"><span>CPU</span> <span id="val-cpu" class="stat-val">--%</span></div>
+        <div class="stat-item"><span>GPU</span> <span id="val-gpu" class="stat-val">--%</span></div>
+        <div class="stat-item"><span>MEM</span> <span id="val-mem" class="stat-val">--%</span></div>
+        <div class="stat-item"><span>Temp</span> <span id="val-temp" class="stat-val">--°</span></div>
+        <div class="stat-item"><span>Disk Util</span> <span id="val-disk-busy" class="stat-val">--MB/s</span></div>
+        <div class="stat-item"><span>Disk Cap</span> <span id="val-disk-cap" class="stat-val">--TB</span></div>
+        <div class="stat-item"><span>WiFi</span> <span id="val-wifi" class="stat-val">--</span></div>
+        <div class="stat-item"><span>Ctrl Lin.</span> <span id="val-linear" class="stat-val">--m/s</span></div>
+        <div class="stat-item"><span>Ctrl Ang.</span> <span id="val-angular" class="stat-val">--rad/s</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="right-panel">
+
+    <div id="costmap-container">
+      <div class="label-overlay">🗺️ Costmap</div>
+      <img id="nav-costmap-img" src="" alt="Waiting..." />
+    </div>
+
+    <div id="traj-container">
+      <div class="label-overlay">📍 Trajectory</div>
+      <div id="robot-pos-label" class="label-overlay" style="top: 35px; color: #00ff00; font-size: 0.8rem;">
+        🤖 x:0.0 y:0.0
+      </div>
+      <canvas id="trajectoryCanvas"></canvas>
+      <div id="coord-tooltip">x:0.0 y:0.0</div>
+    </div>
+
+  </div>
+
+  <script>
+    // =================================================================================
+    //  1. Initialization & Configuration
+    // =================================================================================
+    const socket = io();
+    let currentMode = 'obsbot';
+    let streamingHandle = null;
+    const robotIP = window.location.hostname;
+
+    // Initialize ZED Camera Stream
+    const zedTopic = "/hivla/navila_view";
+    const zedStreamBaseUrl = `http://${robotIP}:8080/stream?topic=${zedTopic}&type=mjpeg&width=384&height=384&quality=40&fps=10`;
+
+    const zedImg = document.getElementById('nav-zed-img');
+    if (zedImg) {
+      zedImg.src = zedStreamBaseUrl + "&_t=" + Date.now();
+      zedImg.onerror = function () {
+        setTimeout(() => { this.src = zedStreamBaseUrl + "&_t=" + Date.now(); }, 2000);
+      };
+    }
+
+    const costmapTopic = "/local_costmap/image";
+    const costmapStreamBaseUrl = `http://${robotIP}:8080/stream?topic=${costmapTopic}&type=mjpeg&width=300&height=300&quality=50&fps=10`;
+
+    // Initialize Costmap Immediately (Always Visible)
+    const costmapImg = document.getElementById('nav-costmap-img');
+    if (costmapImg) {
+      costmapImg.src = costmapStreamBaseUrl + "&_t=" + Date.now();
+      costmapImg.onerror = function () {
+        setTimeout(() => { this.src = costmapStreamBaseUrl + "&_t=" + Date.now(); }, 2000);
+      };
+    }
+
+
+
+    // =================================================================================
+    //  3. Socket Events & UI Control Logic
+    // =================================================================================
+    let isInstructionRunning = false;
+    const runStopButton = document.getElementById('runStopButton');
+    const instructionInput = document.getElementById('instructionInput');
+
+    /** Updates the Run/Stop button UI based on execution state. */
+    function updateButtonState(running) {
+      isInstructionRunning = running;
+      if (running) {
+        runStopButton.innerText = "Stop HiVLA";
+        runStopButton.classList.remove('btn-run');
+        runStopButton.classList.add('btn-stop');
+        instructionInput.disabled = true;
+      } else {
+        runStopButton.innerText = "Run HiVLA";
+        runStopButton.classList.remove('btn-stop');
+        runStopButton.classList.add('btn-run');
+        instructionInput.disabled = false;
+      }
+    }
+
+    /** Handles the Run/Stop button click event. */
+    function toggleInstruction() {
+      if (isInstructionRunning) {
+        // Currently Running -> Request Stop
+        socket.emit("stop_instruction");
+      } else {
+        // Currently Idle -> Request Start
+        const instruction = instructionInput.value.trim();
+        if (instruction) {
+          socket.emit("run_instruction", instruction);
+          updateButtonState(true);
+        } else {
+          alert("Please enter a language instruction or path.");
+        }
+      }
+    }
+
+    /** Listen for status updates from the backend. */
+    socket.on('instruction_status', (data) => {
+      if (data.status === 'running') {
+        updateButtonState(true);
+      } else if (data.status === 'success' || data.status === 'error' || data.status === 'idle') {
+        updateButtonState(false);
+        const overlay = document.getElementById('overlay-debug');
+        if (overlay) { overlay.classList.add('hidden'); overlay.innerText = ''; }
+        const navilaOverlay = document.getElementById('overlay-navila');
+        if (navilaOverlay) { navilaOverlay.classList.add('hidden'); navilaOverlay.innerText = ''; }
+        const labelRgb = document.getElementById('label-rgb');
+        if (labelRgb) labelRgb.classList.remove('hidden');
+        if (data.status === 'error') {
+          alert(`Instruction Error: ${data.message}`);
+        }
+      }
+    });
+
+    // Recording Controls
+    function startRecording() {
+      socket.emit("start_recording", document.getElementById('dirnameInput').value.trim());
+    }
+    function stopRecording() {
+      socket.emit("stop_recording");
+    }
+
+    // Debug Log Updates (top-left: RL policy / coordinate mode)
+    socket.on('debug_log', (data) => {
+      const overlay = document.getElementById('overlay-debug');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        overlay.innerText = data.text;
+      }
+      const labelRgb = document.getElementById('label-rgb');
+      if (labelRgb) labelRgb.classList.add('hidden');
+    });
+
+    // NaVILA Output (bottom-center: NaVILA action text + RL v,w)
+    socket.on('navila_log', (data) => {
+      const overlay = document.getElementById('overlay-navila');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        overlay.innerHTML = data.text;
+      }
+    });
+
+    // System Monitor Updates (CPU, GPU, RAM, etc.)
+    socket.on("sysmon", (data) => {
+      document.getElementById('val-cpu').innerText = data.cpu.toFixed(0) + ' %';
+      document.getElementById('val-gpu').innerText = data.gpu.toFixed(0) + ' %';
+      document.getElementById('val-mem').innerText = data.mem.toFixed(0) + ' %';
+      document.getElementById('val-temp').innerText = data.temp.toFixed(0) + ' °';
+      document.getElementById('val-disk-busy').innerText = data.disk_busy_pct.toFixed(0) + ' MB/s';
+      document.getElementById('val-disk-cap').innerText = `${data.disk_used_tb}/${data.disk_total_tb} TB`;
+      document.getElementById('val-wifi').innerText = data.wifi;
+      document.getElementById('val-linear').innerText = data.linear.toFixed(1) + ' m/s';
+      document.getElementById('val-angular').innerText = data.angular.toFixed(1) + ' rad/s';
+
+      // Process Odometry Data for Trajectory
+      if (data.odom_x !== undefined) {
+        currentPos = { x: data.odom_x, y: data.odom_y };
+        const posLabel = document.getElementById('robot-pos-label');
+        if (posLabel) posLabel.innerText = `🤖 x:${data.odom_x.toFixed(2)} y:${data.odom_y.toFixed(2)}`;
+
+        // Add point to path only when moving and distance > threshold
+        const isMoving = (data.linear !== undefined ? Math.abs(data.linear) > 0.05 : true);
+        const last = robotPath[robotPath.length - 1];
+        if (isMoving && (!last || Math.hypot(last.x - data.odom_x, last.y - data.odom_y) > 0.3)) {
+          robotPath.push({ x: data.odom_x, y: data.odom_y });
+          if (robotPath.length > 3000) robotPath.shift();
+        }
+        requestAnimationFrame(draw);
+      }
+    });
+
+    // Heartbeat & Teleoperation
+    const keyState = {};
+    // Send full key state with every heartbeat as safety sync
+    setInterval(() => {
+      const activeKeys = Object.keys(keyState).filter(k => keyState[k]);
+      socket.emit('heartbeat', { keys: activeKeys });
+    }, 200);
+
+    const ROBOT_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+    window.addEventListener("keydown", e => {
+      if (e.target.tagName !== "INPUT") {
+        if (ROBOT_KEYS.has(e.key)) e.preventDefault();
+        if (!keyState[e.key]) {
+          keyState[e.key] = true; socket.emit("keydown", e.key);
+        }
+      }
+    });
+    window.addEventListener("keyup", e => {
+      if (e.target.tagName !== "INPUT" && keyState[e.key]) {
+        keyState[e.key] = false; socket.emit("keyup", e.key);
+      }
+    });
+    window.addEventListener("blur", () => {
+      console.log("Window lost focus. Stopping all robot movement.");
+      for (let key in keyState) {
+        if (keyState[key]) {
+          keyState[key] = false;
+          socket.emit("keyup", key);
+        }
+      }
+    });
+
+    // =================================================================================
+    //  4. Trajectory Visualization (Canvas)
+    // =================================================================================
+    const canvas = document.getElementById('trajectoryCanvas');
+    const ctx = canvas.getContext('2d');
+    const tooltip = document.getElementById('coord-tooltip');
+
+    // Canvas State
+    let robotPath = [];
+    let currentPos = { x: 0, y: 0 };
+    const view = { x: 0, y: 0, zoom: 20, angle: - Math.PI / 2 };
+    const input = { dragging: false, lastX: 0, lastY: 0, btn: -1 };
+
+    // Resize Handling
+    function resizeCanvas() {
+      if (!canvas.parentElement) return;
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+      draw();
+    }
+    window.addEventListener('resize', resizeCanvas);
+    setTimeout(resizeCanvas, 500);
+
+    // Mouse Interaction Handlers
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+    canvas.addEventListener('mousedown', e => {
+      input.dragging = true; input.lastX = e.offsetX; input.lastY = e.offsetY; input.btn = e.button;
+    });
+    canvas.addEventListener('mouseup', () => input.dragging = false);
+    canvas.addEventListener('mouseleave', () => input.dragging = false);
+
+    // Zoom via Wheel
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      const factor = Math.exp(-e.deltaY * 0.001);
+      view.zoom = Math.max(1, Math.min(view.zoom * factor, 500));
+      draw();
+    });
+
+    // Pan & Rotate via Mouse Move
+    canvas.addEventListener('mousemove', e => {
+      const dx = e.offsetX - input.lastX;
+      const dy = e.offsetY - input.lastY;
+      const w = screenToWorld(e.offsetX, e.offsetY);
+      tooltip.innerText = `x:${w.x.toFixed(2)} y:${w.y.toFixed(2)}`;
+
+      if (input.dragging) {
+        if (input.btn === 2) {
+          // Right Click: Pan
+          const c = Math.cos(-view.angle), s = Math.sin(-view.angle);
+          view.x -= (dx * c - dy * s) / view.zoom;
+          view.y += (dx * s + dy * c) / view.zoom;
+        } else if (input.btn === 0) {
+          // Left Click: Rotate around center
+          const cx = canvas.width / 2; const cy = canvas.height / 2;
+          const ang1 = Math.atan2(input.lastY - cy, input.lastX - cx);
+          const ang2 = Math.atan2(e.offsetY - cy, e.offsetX - cx);
+          view.angle += (ang2 - ang1);
+        }
+        input.lastX = e.offsetX; input.lastY = e.offsetY;
+        draw();
+      }
+    });
+
+    // Coordinate Transform: Screen -> World
+    function screenToWorld(sx, sy) {
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+      const dx = sx - cx, dy = sy - cy;
+      const c = Math.cos(-view.angle), s = Math.sin(-view.angle);
+      const rx = dx * c - dy * s, ry = dx * s + dy * c;
+      return { x: rx / view.zoom + view.x, y: -ry / view.zoom + view.y };
+    }
+
+    // Main Draw Loop
+    function draw() {
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(view.angle);
+      ctx.scale(view.zoom, -view.zoom);
+      ctx.translate(-view.x, -view.y);
+
+      // 1. Draw Grid
+      const range = 20;
+      ctx.beginPath(); ctx.strokeStyle = '#333'; ctx.lineWidth = 1 / view.zoom;
+      const sx = Math.floor(view.x - range), ex = Math.floor(view.x + range);
+      const sy = Math.floor(view.y - range), ey = Math.floor(view.y + range);
+      for (let i = sx; i <= ex; i++) { ctx.moveTo(i, sy); ctx.lineTo(i, ey); }
+      for (let i = sy; i <= ey; i++) { ctx.moveTo(sx, i); ctx.lineTo(ex, i); }
+      ctx.stroke();
+
+      // 2. Draw Path
+      if (robotPath.length > 0) {
+        ctx.beginPath(); ctx.strokeStyle = '#0f0'; ctx.lineWidth = 2 / view.zoom;
+        ctx.moveTo(robotPath[0].x, robotPath[0].y);
+        for (let i = 1; i < robotPath.length; i++) ctx.lineTo(robotPath[i].x, robotPath[i].y);
+        ctx.stroke();
+      }
+
+      // 3. Draw Robot Marker
+      ctx.fillStyle = 'red'; ctx.fillRect(currentPos.x - 0.15, currentPos.y - 0.15, 0.3, 0.3);
+      ctx.lineWidth = 2 / view.zoom;
+      ctx.beginPath(); ctx.strokeStyle = 'red'; ctx.moveTo(0, 0); ctx.lineTo(1, 0); ctx.stroke();
+      ctx.beginPath(); ctx.strokeStyle = 'green'; ctx.moveTo(0, 0); ctx.lineTo(0, 1); ctx.stroke();
+      ctx.restore();
+    }
+
+
+
+    // Error Handling: Retry loading ZED image if failed
+    const zImg = document.getElementById('nav-zed-img');
+    if (zImg) {
+      zImg.onerror = function () {
+        if (currentMode === 'zed') {
+          setTimeout(() => {
+            if (currentMode === 'zed') this.src = zedStreamBaseUrl + "&_t=" + Date.now();
+          }, 2000);
+        }
+      };
+    }
+  </script>
+</body>
+
+</html>

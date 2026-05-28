@@ -1,0 +1,112 @@
+#!/bin/bash
+# HiVLA Master Startup Script
+
+HIVLA_ROOT="$HOME/HiVLA"
+LOG_ROOT="$HIVLA_ROOT/logs"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+LOG_DIR="$LOG_ROOT/$TIMESTAMP"
+
+mkdir -p "$LOG_DIR"
+echo "========================================================"
+echo "   🚀 HiVLA System Startup "
+echo "   📂 Logs: $LOG_DIR"
+echo "========================================================"
+
+cleanup() {
+    echo ""
+    echo "🛑 [Shutdown] Stopping all processes..."
+
+    kill -9 $VELODYNE_PID $WEB_VID_PID $COSTMAP_PID $RESIZE_RGB_PID $CTRL_PID $EKF_PID $TAG_PID 2>/dev/null
+
+    echo "   - Terminating ROS 2 nodes..."
+    pkill -f scout_base
+    pkill -f zed_wrapper
+    pkill -f rslidar_sdk
+    pkill -f rs_to_velodyne
+    pkill -f fast_livo
+    pkill -f robot_localization
+    pkill -f static_broadcaster
+    pkill -f apriltag_node
+    pkill -f publish_tag
+    pkill -f publish_costmap
+    pkill -f publish_resize_rgb
+    pkill -f web_video_server
+    pkill -f run.py
+    pkill -f navila_bridge.py
+
+    echo "✅ System shut down successfully."
+    exit
+}
+trap cleanup SIGINT SIGTERM
+
+# Step 1: Hardware Interface (CAN)
+echo "🚗 [1/5] Initializing Hardware Interfaces..."
+sudo ip link set can2 down
+sudo ip link set can2 up type can bitrate 500000
+
+# Step 2: ROS 2 Drivers
+echo "🦾 [2/5] Launching Drivers..."
+
+echo "   - Scout Base Driver"
+ros2 launch scout_base scout_base.launch.py odom_frame:=scout_odom > "$LOG_DIR/scout_base.log" 2>&1 &
+
+echo "   - ZED 2i Camera Wrapper"
+ros2 launch zed_wrapper zed_camera.launch.py camera_model:=zed2i > "$LOG_DIR/zed.log" 2>&1 &
+
+echo "   - Helios RS32 LiDAR"
+ros2 launch rslidar_sdk humble_start.py lidar_type:=rshelios > "$LOG_DIR/lidar.log" 2>&1 &
+~/HiVLA/ros2_ws/install/rs_to_velodyne/lib/rs_to_velodyne/rs_to_velodyne XYZIRT XYZIRT > "$LOG_DIR/velodyne.log" 2>&1 &
+VELODYNE_PID=$!
+
+ros2 launch fast_livo launch.py > "$LOG_DIR/fast_livo.log" 2>&1 &
+
+# Step 3: Localization Stack (Dual EKF + AprilTag)
+echo "📍 [3/5] Starting Localization Stack..."
+
+# 3.1 Static Transforms (Map <-> Tag)
+ros2 run examples_tf2_py static_broadcaster > "$LOG_DIR/tf_static.log" 2>&1 &
+
+# 3.2 AprilTag Detection (Camera -> Tag)
+echo "   - AprilTag Node"
+ros2 run apriltag_ros apriltag_node --ros-args \
+    -r image_rect:=/zed/zed_node/rgb/color/rect/image \
+    -r camera_info:=/zed/zed_node/rgb/color/rect/camera_info \
+    --params-file "$HIVLA_ROOT/third_party/apriltags/tags.yaml" > "$LOG_DIR/apriltag.log" 2>&1 &
+
+# 3.3 Tag to Pose Converter
+echo "   - Tag Pose Publisher"
+(cd "$HIVLA_ROOT" && python3 third_party/apriltags/publish_tag.py) > "$LOG_DIR/tag_pose.log" 2>&1 &
+TAG_PID=$!
+
+# 3.4 Dual EKF
+echo "   - Dual EKF System"
+RCUTILS_LOGGING_SEVERITY_THRESHOLD=DEBUG ros2 launch robot_localization dual_ekf.launch.py > "$LOG_DIR/dual_ekf.log" 2>&1 &
+EKF_PID=$!
+
+# Step 4: Perception & Visualization
+echo "👁️  [4/5] Starting Perception & Streamers..."
+
+# 4.1 GPU Costmap
+(cd "$HIVLA_ROOT" && python3 models/policy/publish_costmap.py) > "$LOG_DIR/costmap.log" 2>&1 &
+COSTMAP_PID=$!
+
+# 4.2 ZED RGB Resize (384x384 -> /hivla/navila_view)
+(cd "$HIVLA_ROOT" && python3 models/vla/publish_resize_rgb.py) > "$LOG_DIR/resize_rgb.log" 2>&1 &
+RESIZE_RGB_PID=$!
+
+# 4.3 Web Video Server
+ros2 run web_video_server web_video_server > "$LOG_DIR/web_video.log" 2>&1 &
+WEB_VID_PID=$!
+
+# Step 5: Application Server
+echo " "
+echo "🕹️  [5/5] Starting HiVLA Control Server..."
+HIVLA_LOG_DIR="$LOG_DIR" python3 "$HIVLA_ROOT/web_server/app.py" > "$LOG_DIR/flask_server.log" 2>&1 &
+CTRL_PID=$!
+
+echo "✅ System Ready! Monitoring logs..."
+echo "👉 Access at: http://100.106.93.1:5000"
+echo "👉 Logs are at: $LOG_DIR"
+
+# Keep the script running to maintain background processes
+wait
