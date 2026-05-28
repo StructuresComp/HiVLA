@@ -113,7 +113,7 @@ All experiments in the paper were conducted on the following hardware and softwa
     <tr>
       <td rowspan="4"><strong>Hardware</strong></td>
       <td>Compute</td>
-      <td><strong>NVIDIA Jetson AGX Orin Dev. 64 GB</strong></td>
+      <td>NVIDIA Jetson AGX Orin Dev. 64 GB</td>
     </tr>
     <tr>
       <td>Mobile Base</td>
@@ -142,7 +142,7 @@ All experiments in the paper were conducted on the following hardware and softwa
     </tr>
     <tr>
       <td>CUDA</td>
-      <td><strong>12.6</strong></td>
+      <td>12.6</td>
     </tr>
     <tr>
       <td>cuDNN</td>
@@ -153,14 +153,14 @@ All experiments in the paper were conducted on the following hardware and softwa
       <td>3.10.12</td>
     </tr>
     <tr>
-      <td><strong>ROS 2 Stack</strong></td>
+      <td>ROS 2 Stack</td>
       <td>ROS 2 Distro</td>
-      <td><strong>Humble</strong></td>
+      <td>Humble</td>
     </tr>
     <tr>
       <td rowspan="5"><strong>NaVILA Model</strong></td>
       <td>Base Model</td>
-      <td><strong>VILA (LLaMA-3 8B)</strong></td>
+      <td>VILA (LLaMA-3 8B)</td>
     </tr>
     <tr>
       <td>Vision Encoder</td>
@@ -181,7 +181,7 @@ All experiments in the paper were conducted on the following hardware and softwa
     <tr>
       <td rowspan="4"><strong>Deviation Detection</strong></td>
       <td>Selected Heads ([L, H])</td>
-      <td><strong>[21, 12], [16, 1], [14, 1]</strong></td>
+      <td>[21, 12], [16, 1], [14, 1]</td>
     </tr>
     <tr>
       <td>Window Size</td>
@@ -198,7 +198,7 @@ All experiments in the paper were conducted on the following hardware and softwa
     <tr>
       <td rowspan="4"><strong>RL Action Policy</strong></td>
       <td>Architecture</td>
-      <td><strong>CNN + MLP</strong></td>
+      <td>CNN + MLP</td>
     </tr>
     <tr>
       <td>Parameters</td>
