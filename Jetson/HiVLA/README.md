@@ -28,11 +28,11 @@ cp -r NaVILA/evaluation/vlnce_baselines/hivla/ third_party/NaVILA/evaluation/vln
 
 This repository uses git submodules for three third-party dependencies under `third_party/`:
 
-| Submodule | Source |
-|-----------|--------|
-| `Livox-SDK2` | https://github.com/Livox-SDK/Livox-SDK2.git |
-| `janus-gateway` | https://github.com/meetecho/janus-gateway.git |
-| `libnice` | https://gitlab.freedesktop.org/libnice/libnice |
+| Submodule | Purpose | Source |
+|-----------|---------|--------|
+| `Livox-SDK2` | SDK required by FAST-LIVO2 for Livox LiDAR driver (`livox_ros_driver2`) | https://github.com/Livox-SDK/Livox-SDK2.git |
+| `janus-gateway` | WebRTC server for real-time video streaming and remote teleoperation | https://github.com/meetecho/janus-gateway.git |
+| `libnice` | ICE/NAT traversal library required by `janus-gateway` for WebRTC peer connectivity | https://gitlab.freedesktop.org/libnice/libnice |
 
 Clone the repository with all submodules in one command:
 

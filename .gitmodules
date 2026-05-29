@@ -1,11 +1,14 @@
+# SDK required by FAST-LIVO2 for Livox LiDAR driver support (livox_ros_driver2)
 [submodule "Jetson/HiVLA/third_party/Livox-SDK2"]
 	path = Jetson/HiVLA/third_party/Livox-SDK2
 	url = https://github.com/Livox-SDK/Livox-SDK2.git
 
+# WebRTC server for real-time video streaming and remote teleoperation web interface
 [submodule "Jetson/HiVLA/third_party/janus-gateway"]
 	path = Jetson/HiVLA/third_party/janus-gateway
 	url = https://github.com/meetecho/janus-gateway.git
 
+# ICE/NAT traversal library required by janus-gateway for WebRTC peer connectivity
 [submodule "Jetson/HiVLA/third_party/libnice"]
 	path = Jetson/HiVLA/third_party/libnice
 	url = https://gitlab.freedesktop.org/libnice/libnice
