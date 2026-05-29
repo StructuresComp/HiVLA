@@ -1,4 +1,0 @@
-# Large files excluded from git (>100 MB)
-Host/IsaacLab/source/extensions/hivla_project/checkpoint/best_agent.pt
-Jetson/HiVLA/models/policy/checkpoints/rl_checkpoints.pt
-Jetson/HiVLA/third_party/gs_usb/
