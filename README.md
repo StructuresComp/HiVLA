@@ -153,64 +153,9 @@ All experiments in the paper were conducted on the following hardware and softwa
       <td>3.10.12</td>
     </tr>
     <tr>
-      <td>ROS 2 Stack</td>
+      <td><strong>ROS 2 Stack</strong></td>
       <td>ROS 2 Distro</td>
       <td>Humble</td>
-    </tr>
-    <tr>
-      <td rowspan="5"><strong>NaVILA Model</strong></td>
-      <td>Base Model</td>
-      <td>VILA (LLaMA-3 8B)</td>
-    </tr>
-    <tr>
-      <td>Vision Encoder</td>
-      <td>SigLIP-So400M/patch14/384</td>
-    </tr>
-    <tr>
-      <td>Checkpoint</td>
-      <td>navila-llama3-8b-8f</td>
-    </tr>
-    <tr>
-      <td>Input Resolution</td>
-      <td>384 × 384</td>
-    </tr>
-    <tr>
-      <td>Inference Frames</td>
-      <td>8 (7 history + 1 current)</td>
-    </tr>
-    <tr>
-      <td rowspan="4"><strong>Deviation Detection</strong></td>
-      <td>Selected Heads ([L, H])</td>
-      <td>[21, 12], [16, 1], [14, 1]</td>
-    </tr>
-    <tr>
-      <td>Window Size</td>
-      <td>W = 10 steps</td>
-    </tr>
-    <tr>
-      <td>Patience Threshold</td>
-      <td>P = 9 steps</td>
-    </tr>
-    <tr>
-      <td>Natural Threshold</td>
-      <td>τ = 0.95</td>
-    </tr>
-    <tr>
-      <td rowspan="4"><strong>RL Action Policy</strong></td>
-      <td>Architecture</td>
-      <td>CNN + MLP</td>
-    </tr>
-    <tr>
-      <td>Parameters</td>
-      <td>4.89 M</td>
-    </tr>
-    <tr>
-      <td>Costmap Input</td>
-      <td>1 × 128 × 128 (Occupancy Grid)</td>
-    </tr>
-    <tr>
-      <td>Goal Input</td>
-      <td>1 × 2 (Δx, Δy in local frame)</td>
     </tr>
   </tbody>
 </table>
