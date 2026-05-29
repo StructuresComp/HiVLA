@@ -1,0 +1,11 @@
+[submodule "Jetson/HiVLA/third_party/Livox-SDK2"]
+	path = Jetson/HiVLA/third_party/Livox-SDK2
+	url = https://github.com/Livox-SDK/Livox-SDK2.git
+
+[submodule "Jetson/HiVLA/third_party/janus-gateway"]
+	path = Jetson/HiVLA/third_party/janus-gateway
+	url = https://github.com/meetecho/janus-gateway.git
+
+[submodule "Jetson/HiVLA/third_party/libnice"]
+	path = Jetson/HiVLA/third_party/libnice
+	url = https://gitlab.freedesktop.org/libnice/libnice
