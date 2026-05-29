@@ -1,3 +1,13 @@
+## Checkpoint
+
+The RL policy checkpoint (`models/policy/checkpoints/rl_checkpoints.pt`) is not included in the repository due to file size. Download it here:
+
+**[Download rl_checkpoints.pt](https://works.do/x1D87HE)**
+
+Place the file at `models/policy/checkpoints/rl_checkpoints.pt` before running the policy.
+
+---
+
 ## NaVILA Integration
 
 HiVLA extends [NaVILA](https://navila-bot.github.io/) with a custom replanning module (`vlnce_baselines/hivla/`).
