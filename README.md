@@ -113,7 +113,7 @@ All experiments in the paper were conducted on the following hardware and softwa
     <tr>
       <td rowspan="4"><strong>Hardware</strong></td>
       <td>Compute</td>
-      <td>NVIDIA Jetson AGX Orin Dev. 64 GB</td>
+      <td>NVIDIA&nbsp;Jetson&nbsp;AGX&nbsp;Orin&nbsp;Dev.&nbsp;64&nbsp;GB</td>
     </tr>
     <tr>
       <td>Mobile Base</td>
