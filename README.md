@@ -128,7 +128,7 @@ All experiments in the paper were conducted on the following hardware and softwa
       <td>RoboSense Helios RS-32</td>
     </tr>
     <tr>
-      <td rowspan="6"><strong>System Software</strong></td>
+      <td rowspan="6"><strong>System&nbsp;Software</strong></td>
       <td>JetPack</td>
       <td>6.2.1 (L4T R36.4.7)</td>
     </tr>
@@ -153,7 +153,7 @@ All experiments in the paper were conducted on the following hardware and softwa
       <td>3.10.12</td>
     </tr>
     <tr>
-      <td><strong>ROS 2 Stack</strong></td>
+      <td><strong>ROS&nbsp;2&nbsp;Stack</strong></td>
       <td>ROS 2 Distro</td>
       <td>Humble</td>
     </tr>
