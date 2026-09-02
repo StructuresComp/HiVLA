@@ -2,7 +2,7 @@
 
 The RL policy checkpoint (`models/policy/checkpoints/rl_checkpoints.pt`) is not included in the repository due to file size. Download it here:
 
-**[Download rl_checkpoints.pt](https://works.do/x1D87HE)**
+**[Download rl_checkpoints.pt](https://works.do/Fjl6Gke)**
 
 Place the file at `models/policy/checkpoints/rl_checkpoints.pt` before running the policy.
 
