@@ -31,7 +31,7 @@ hivla_project/
 
 The pre-trained checkpoint (`checkpoint/best_agent.pt`) is not included in the repository due to file size. Download it here:
 
-**[Download best_agent.pt](https://works.do/FA5mWhm)**
+**[Download best_agent.pt](https://works.do/IImklFh)**
 
 Place the file at `checkpoint/best_agent.pt` before running evaluation.
 
